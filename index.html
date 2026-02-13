@@ -64,7 +64,7 @@ canvas.height = window.innerHeight;
 
 let gravity = 0.8;
 let jumpPower = -15;
-let speed = 6;
+let speed = 5;
 let score = 0;
 let gameRunning = false;
 let isTitle = true;
@@ -95,7 +95,7 @@ function spawnObstacle() {
   });
 }
 
-setInterval(spawnObstacle, 1500);
+setInterval(spawnObstacle, 2200);
 
 function update() {
 
@@ -241,7 +241,7 @@ function startSpecialEnding() {
 function restart() {
   obstacles = [];
   score = 0;
-  speed = 6;
+  speed = 5;
 
   gameRunning = true;
   inEnding = false;
