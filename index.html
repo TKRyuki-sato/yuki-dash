@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yuki Dash</title>
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background: white;
+  font-family: sans-serif;
+  text-align: center;
+}
+
+canvas {
+  background: #f7f7f7;
+  display: block;
+  margin: 0 auto;
+}
+
+#score {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  font-weight: bold;
+}
+
+#gameOver {
+  position: absolute;
+  top: 40%;
+  width: 100%;
+  font-size: 32px;
+  display: none;
+}
+
+button {
+  font-size: 20px;
+  padding: 10px 20px;
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<div id="score">0</div>
+<div id="gameOver">
+  Game Over<br>
+  <button onclick="restart()">もう一回</button>
+</div>
+<div id="endingScreen" style="display:none; position:absolute; top:65%; left:50%; transform:translate(-50%,-50%); text-align:center;">
+  <button onclick="restart()">もう一回</button>
+</div>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let gravity = 0.8;
+let jumpPower = -15;
+let speed = 6;
+let score = 0;
+let gameRunning = false;
+let isTitle = true;
+let player = {
+  x: 100,
+  y: canvas.height - 150,
+  width: 60,
+  height: 60,
+  dy: 0,
+  grounded: true
+};
+const yukiImg = new Image();
+yukiImg.src = "yuki-dot.png";
+
+let obstacles = [];
+
+const SPECIAL_SCORE = 500;
+let inEnding = false;
+let endingStartTime = 0;
+
+function spawnObstacle() {
+  let height = 60;
+  obstacles.push({
+    x: canvas.width,
+    y: canvas.height - height,
+    width: 40,
+    height: height
+  });
+}
+
+setInterval(spawnObstacle, 1500);
+
+function update() {
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // ===== タイトル =====
+  if (isTitle) {
+    drawTitle();
+  }
+
+  // ===== エンディング =====
+  else if (inEnding) {
+    drawEnding();
+  }
+
+  // ===== ゲーム停止中 =====
+  else if (!gameRunning) {
+    // 何も描かない
+  }
+
+  // ===== 通常ゲーム =====
+  else {
+
+    player.dy += gravity;
+    player.y += player.dy;
+
+    if (player.y + player.height >= canvas.height) {
+      player.y = canvas.height - player.height;
+      player.dy = 0;
+      player.grounded = true;
+    }
+
+    ctx.drawImage(yukiImg, player.x, player.y, player.width, player.height);
+
+    ctx.fillStyle = "black";
+
+    for (let i = 0; i < obstacles.length; i++) {
+      let obs = obstacles[i];
+      obs.x -= speed;
+
+      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+      if (
+        player.x < obs.x + obs.width &&
+        player.x + player.width > obs.x &&
+        player.y < obs.y + obs.height &&
+        player.y + player.height > obs.y
+      ) {
+        if (score >= SPECIAL_SCORE) {
+          startSpecialEnding();
+        } else {
+          gameOver();
+        }
+      }
+    }
+
+    obstacles = obstacles.filter(obs => obs.x + obs.width > 0);
+
+    score++;
+    document.getElementById("score").innerText = score;
+
+    if (score % 500 === 0) {
+      speed += 0.5;
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+function jump() {
+
+  if (isTitle) {
+    isTitle = false;
+    gameRunning = true;
+    return;
+  }
+
+  if (player.grounded && gameRunning) {
+    player.dy = jumpPower;
+    player.grounded = false;
+  }
+}
+
+
+function gameOver() {
+  gameRunning = false;
+  document.getElementById("gameOver").style.display = "block";
+}
+
+function drawEnding() {
+  let elapsed = Date.now() - endingStartTime;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.font = "30px sans-serif";
+
+  if (elapsed < 1500) {
+    // Phase 0: 転ぶ
+    ctx.fillText("ゆきくん、転ぶ…", canvas.width / 2, canvas.height / 2);
+  } 
+  else if (elapsed < 3500) {
+    // Phase 1: 甥っ子登場
+    ctx.fillText("甥っ子が駆け寄る！", canvas.width / 2, canvas.height / 2);
+  } 
+  else if (elapsed < 6500) {
+    // Phase 2: リングを届ける
+    ctx.fillText("リングを届ける。", canvas.width / 2, canvas.height / 2);
+  } 
+  else {
+    // Phase 3: クリア表示
+    ctx.fillText("GAME CLEAR", canvas.width / 2, canvas.height / 2 - 30);
+    ctx.fillText("Score: " + score, canvas.width / 2, canvas.height / 2 + 10);
+    document.getElementById("endingScreen").style.display = "block";
+
+  }
+}
+
+function drawTitle() {
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+
+  ctx.font = "60px sans-serif";
+  ctx.fillText("YUKI DASH", canvas.width / 2, canvas.height / 2 - 40);
+
+  ctx.font = "30px sans-serif";
+  ctx.fillText("TAP TO START", canvas.width / 2, canvas.height / 2 + 40);
+}
+
+function startSpecialEnding() {
+  gameRunning = false;
+  inEnding = true;
+  endingStartTime = Date.now();
+}
+
+
+function restart() {
+  obstacles = [];
+  score = 0;
+  speed = 6;
+
+  gameRunning = true;
+  inEnding = false;
+
+  player.y = canvas.height - player.height;
+  player.dy = 0;
+  player.grounded = true;
+
+  document.getElementById("gameOver").style.display = "none";
+  document.getElementById("endingScreen").style.display = "none";
+  document.getElementById("score").innerText = score;
+
+  
+}
+
+
+window.addEventListener("touchstart", jump);
+window.addEventListener("click", jump);
+
+update();
+</script>
+
+</body>
+</html>
