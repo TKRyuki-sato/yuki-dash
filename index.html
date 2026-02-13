@@ -49,6 +49,12 @@ button {
   margin: 20px auto;
 }
 
+#endingScreen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 </style>
 </head>
 <body>
@@ -253,6 +259,7 @@ function startSpecialEnding() {
   gameRunning = false;
   inEnding = true;
   endingStartTime = Date.now();
+  document.getElementById("score").style.display = "none";
 }
 
 
@@ -271,6 +278,7 @@ function restart() {
   document.getElementById("gameOver").style.display = "none";
   document.getElementById("endingScreen").style.display = "none";
   document.getElementById("score").innerText = score;
+  document.getElementById("score").style.display = "block";
 
   
 }
@@ -284,3 +292,4 @@ update();
 
 </body>
 </html>
+
