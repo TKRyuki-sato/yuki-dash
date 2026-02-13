@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -48,14 +49,23 @@ button {
 </head>
 <body>
 
-<div id="score">0</div>
-<div id="gameOver">
-  Game Over<br>
-  <button onclick="restart()">もう一回</button>
+<div id="gameWrapper">
+
+  <div id="score">0</div>
+
+  <div id="gameOver" style="display:none;">
+    Game Over<br>
+    <button onclick="restart()">もう一回</button>
+  </div>
+
+  <div id="endingScreen" style="display:none; text-align:center;">
+    <button onclick="restart()">もう一回</button>
+  </div>
+
+  <canvas id="game"></canvas>
+
 </div>
-<div id="endingScreen" style="display:none; position:absolute; top:65%; left:50%; transform:translate(-50%,-50%); text-align:center;">
-  <button onclick="restart()">もう一回</button>
-</div>
+
 <canvas id="game"></canvas>
 
 <script>
@@ -271,4 +281,3 @@ update();
 
 </body>
 </html>
-
