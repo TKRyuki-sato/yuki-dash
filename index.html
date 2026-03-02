@@ -86,6 +86,7 @@ const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 400;
 
+
 let frameCount = 0;
 let runFrame = 0;
 let gravity = 0.8;
@@ -95,6 +96,8 @@ let groundOffset = 0;
 let score = 0;
 let gameRunning = false;
 let isTitle = true;
+let endingYukiX = 150;
+let liftDuration = 400; // 抱き上げにかける時間(ms)
 let player = {
   x: 100,
   y: canvas.height - 150,
@@ -103,6 +106,7 @@ let player = {
   dy: 0,
   grounded: true
 };
+let endingYukiY = canvas.height - player.height;
 let grassDots = [];
 function createGrass() {
   grassDots = [];
@@ -114,6 +118,13 @@ function createGrass() {
     });
   }
 }
+let nephew = {
+  x: canvas.width + 50,
+  y: canvas.height - 80,  // ← ここ変更
+  width: 60,
+  height: 60,
+  speed: 4
+};
 
 
 const run1 = new Image();
@@ -127,6 +138,7 @@ jumpImg.src = "yuki-dash1ribon.png";
 
 const landImg = new Image();
 landImg.src = "yuki-jump2ribon.png";
+
 
 
 let obstacles = [];
@@ -296,8 +308,23 @@ function drawEnding() {
   let elapsed = Date.now() - endingStartTime;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // 背景（屋内）
+ctx.fillStyle = "#2C2C2C";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// 床（屋内フロア）
+ctx.fillStyle = "#444";
+ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+
+// ウェディングロード（中央赤）
+ctx.fillStyle = "#B71C1C";
+ctx.fillRect(
+  canvas.width / 2 - 80,
+  canvas.height - 80,
+  160,
+  80
+);
+
 
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
@@ -308,13 +335,113 @@ function drawEnding() {
     ctx.fillText("ゆきくん、転ぶ…", canvas.width / 2, canvas.height / 2);
   } 
   else if (elapsed < 3500) {
-    // Phase 1: 甥っ子登場
-    ctx.fillText("甥っ子が駆け寄る！", canvas.width / 2, canvas.height / 2);
-  } 
+
+  // 屋外背景（通常と同じ）
+  ctx.fillStyle = "#87CEEB";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#4CAF50";
+  ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+
+  // 転んだゆき（仮で通常表示）
+  ctx.drawImage(run1, endingYukiX, endingYukiY, player.width, player.height);
+
+  // 甥っ子がゆきの横まで移動
+  // ---- 駆け寄り停止位置をゆき基準にする ----
+let targetX = endingYukiX - 10; // ゆきのすぐ横で止める
+
+if (nephew.x > targetX) {
+  nephew.x -= nephew.speed;
+}
+
+
+  // 甥っ子描画（黒四角）
+  ctx.fillStyle = "black";
+  ctx.fillRect(nephew.x, nephew.y, nephew.width, nephew.height);
+}
+
+else if (elapsed < 4200) {
+
+  // 屋外背景
+  ctx.fillStyle = "#87CEEB";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#4CAF50";
+  ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+
+  // ゆき
+  ctx.drawImage(run1, endingYukiX, endingYukiY, player.width, player.height);
+
+
+  // 甥っ子（止まった位置）
+  ctx.fillStyle = "black";
+  ctx.fillRect(nephew.x, nephew.y, nephew.width, nephew.height);
+}
+
+else if (elapsed < 5500) {
+
+  // 屋外背景
+  ctx.fillStyle = "#87CEEB";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#4CAF50";
+  ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+
+  // 甥っ子（止まってる）
+  ctx.fillStyle = "black";
+  ctx.fillRect(nephew.x, nephew.y, nephew.width, nephew.height);
+
+  // ---- 抱き上げアニメーション ----
+  let liftStart = 4200;
+  let progress = Math.min((elapsed - liftStart) / liftDuration, 1);
+
+  // 横は少し甥っ子側に寄せる
+  let yukiX = endingYukiX + (nephew.x + 10 - endingYukiX) * progress;
+
+  // 上に持ち上げる
+  let yukiY = endingYukiY - 40 * progress;
+
+  ctx.drawImage(run1, yukiX, yukiY, player.width, player.height);
+}
+
+
+
   else if (elapsed < 6500) {
     // Phase 2: リングを届ける
     ctx.fillText("リングを届ける。", canvas.width / 2, canvas.height / 2);
   } 
+
+  else if (elapsed < 8000) {
+
+  // 屋内背景
+ctx.fillStyle = "#2C2C2C";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// 床
+ctx.fillStyle = "#444";
+ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+
+// 赤いロード（横長）
+ctx.fillStyle = "#B71C1C";
+ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+
+  // 一緒に移動
+  nephew.x += 2;
+
+  // 甥っ子
+  ctx.fillStyle = "black";
+  ctx.fillRect(nephew.x, nephew.y, nephew.width, nephew.height);
+
+  // 抱っこゆき
+  ctx.drawImage(
+    run1,
+    nephew.x + 10,
+    nephew.y - 40,
+    player.width,
+    player.height
+  );
+}
+
   else {
     // Phase 3: クリア表示
     ctx.fillText("GAME CLEAR", canvas.width / 2, canvas.height / 2 - 30);
@@ -343,7 +470,11 @@ function startSpecialEnding() {
   inEnding = true;
   endingStartTime = Date.now();
   document.getElementById("score").style.display = "none";
+
+  // 甥っ子は画面右外からスタート
+  nephew.x = canvas.width + 60;
 }
+
 
 
 function restart() {
@@ -357,6 +488,7 @@ function restart() {
   player.y = canvas.height - player.height;
   player.dy = 0;
   player.grounded = true;
+  nephew.x = canvas.width + 50;
 
   document.getElementById("gameOver").style.display = "none";
   document.getElementById("endingScreen").style.display = "none";
