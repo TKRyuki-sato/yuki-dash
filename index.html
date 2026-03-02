@@ -87,7 +87,8 @@ canvas.width = 800;
 canvas.height = 400;
 
 
-
+let frameCount = 0;
+let runFrame = 0;
 let gravity = 0.8;
 let jumpPower = -15;
 let speed = 5;
@@ -102,8 +103,19 @@ let player = {
   dy: 0,
   grounded: true
 };
-const yukiImg = new Image();
-yukiImg.src = "yuki-dot.png";
+
+const run1 = new Image();
+run1.src = "yuki-dash1ribon.png";
+
+const run2 = new Image();
+run2.src = "yuki-dash2ribon.png";
+
+const jumpImg = new Image();
+jumpImg.src = "yuki-dash1ribon.png";
+
+const landImg = new Image();
+landImg.src = "yuki-jump2ribon.png";
+
 
 let obstacles = [];
 
@@ -154,7 +166,15 @@ function update() {
       player.grounded = true;
     }
 
-    ctx.drawImage(yukiImg, player.x, player.y, player.width, player.height);
+    if (!player.grounded) {
+  ctx.drawImage(jumpImg, player.x, player.y, player.width, player.height);
+} else {
+  if (runFrame === 0) {
+    ctx.drawImage(run1, player.x, player.y, player.width, player.height);
+  } else {
+    ctx.drawImage(run2, player.x, player.y, player.width, player.height);
+  }
+}
 
     ctx.fillStyle = "black";
 
@@ -180,12 +200,23 @@ function update() {
 
     obstacles = obstacles.filter(obs => obs.x + obs.width > 0);
 
+    
+
     score++;
     document.getElementById("score").innerText = score;
+
+    
 
     if (score % 500 === 0) {
       speed += 0.5;
     }
+
+    frameCount++;
+
+if (frameCount % 10 === 0) {
+  runFrame = (runFrame + 1) % 2;
+}
+
   }
 
   requestAnimationFrame(update);
