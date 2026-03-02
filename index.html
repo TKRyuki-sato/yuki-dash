@@ -86,12 +86,12 @@ const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 400;
 
-
 let frameCount = 0;
 let runFrame = 0;
 let gravity = 0.8;
 let jumpPower = -15;
 let speed = 5;
+let groundOffset = 0;
 let score = 0;
 let gameRunning = false;
 let isTitle = true;
@@ -103,6 +103,18 @@ let player = {
   dy: 0,
   grounded: true
 };
+let grassDots = [];
+function createGrass() {
+  grassDots = [];
+  for (let i = 0; i < 30; i++) {
+    grassDots.push({
+      x: Math.random() * canvas.width,
+      y: canvas.height - 40 + Math.random() * 35,
+      size: Math.random() * 3 + 2
+    });
+  }
+}
+
 
 const run1 = new Image();
 run1.src = "yuki-dash1ribon.png";
@@ -119,6 +131,7 @@ landImg.src = "yuki-jump2ribon.png";
 
 let obstacles = [];
 
+
 const SPECIAL_SCORE = 500;
 let inEnding = false;
 let endingStartTime = 0;
@@ -134,6 +147,8 @@ function spawnObstacle() {
 }
 
 setInterval(spawnObstacle, 2200);
+
+createGrass();
 
 function update() {
 
@@ -155,7 +170,39 @@ function update() {
   }
 
   // ===== 通常ゲーム =====
+
+  
   else {
+    // 背景（空）
+ctx.fillStyle = "#87CEEB";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 床（草原）
+ctx.fillStyle = "#4CAF50";
+ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+
+// 草のライン（動く）
+ctx.fillStyle = "#388E3C";
+
+for (let i = 0; i < canvas.width / 40 + 2; i++) {
+  let x = (i * 40 - groundOffset % 40);
+  ctx.fillRect(x, canvas.height - 40, 20, 5);
+}
+// 草の点々
+ctx.fillStyle = "#2E7D32";
+
+for (let dot of grassDots) {
+  dot.x -= speed;
+
+  if (dot.x < -5) {
+    dot.x = canvas.width + Math.random() * 50;
+    dot.y = canvas.height - 40 + Math.random() * 35;
+  }
+
+  ctx.fillRect(dot.x, dot.y, dot.size, dot.size);
+}
+
+
 
     player.dy += gravity;
     player.y += player.dy;
@@ -204,6 +251,9 @@ function update() {
 
     score++;
     document.getElementById("score").innerText = score;
+
+    groundOffset += speed;
+
 
     
 
