@@ -87,6 +87,13 @@ canvas.width = 800;
 canvas.height = 400;
 
 
+
+let brideGroom = {
+  x: canvas.width + 100,
+  y: canvas.height - 60,
+  width: 80,
+  height: 60
+};
 let frameCount = 0;
 let runFrame = 0;
 let gravity = 0.8;
@@ -147,6 +154,8 @@ let obstacles = [];
 const SPECIAL_SCORE = 500;
 let inEnding = false;
 let endingStartTime = 0;
+let hasMet = false;
+let meetTime = 0;
 
 function spawnObstacle() {
   let height = 60;
@@ -411,28 +420,43 @@ else if (elapsed < 5500) {
     ctx.fillText("リングを届ける。", canvas.width / 2, canvas.height / 2);
   } 
 
-  else if (elapsed < 8000) {
+  else {
 
-  // 屋内背景
-ctx.fillStyle = "#2C2C2C";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // ---- 屋内背景 ----
+  ctx.fillStyle = "#2C2C2C";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// 床
-ctx.fillStyle = "#444";
-ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+  ctx.fillStyle = "#444";
+  ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
 
-// 赤いロード（横長）
-ctx.fillStyle = "#B71C1C";
-ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+  ctx.fillStyle = "#B71C1C";
+  ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
 
-  // 一緒に移動
-  nephew.x += 2;
 
-  // 甥っ子
+
+  // ---- 甥っ子移動（停止付き）----
+  if (!hasMet) {
+
+    let nextX = nephew.x + 2;
+
+    if (nextX + nephew.width >= brideGroom.x) {
+    nephew.x = brideGroom.x - nephew.width;
+    hasMet = true;
+    meetTime = Date.now();
+}
+     else {
+      nephew.x = nextX;
+    }
+  }
+
+
+  // ---- 描画 ----
+  ctx.fillStyle = "white";
+  ctx.fillRect(brideGroom.x, brideGroom.y, brideGroom.width, brideGroom.height);
+
   ctx.fillStyle = "black";
   ctx.fillRect(nephew.x, nephew.y, nephew.width, nephew.height);
 
-  // 抱っこゆき
   ctx.drawImage(
     run1,
     nephew.x + 10,
@@ -442,14 +466,21 @@ ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
   );
 }
 
-  else {
-    // Phase 3: クリア表示
-    ctx.fillText("GAME CLEAR", canvas.width / 2, canvas.height / 2 - 30);
-    ctx.fillText("Score: " + score, canvas.width / 2, canvas.height / 2 + 10);
-    document.getElementById("endingScreen").style.display = "block";
+// ---- 合流後1秒で表示 ----
+if (hasMet && Date.now() - meetTime > 1000) {
 
-  }
+  ctx.fillStyle = "white";
+  ctx.font = "48px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("GAME CLEAR", canvas.width / 2, canvas.height / 2 - 20);
+
+  document.getElementById("endingScreen").style.display = "block";
 }
+ 
+}
+
+
+
 
 function drawTitle() {
   ctx.fillStyle = "black";
@@ -470,6 +501,7 @@ function startSpecialEnding() {
   inEnding = true;
   endingStartTime = Date.now();
   document.getElementById("score").style.display = "none";
+  brideGroom.x = canvas.width / 2 + 40;
 
   // 甥っ子は画面右外からスタート
   nephew.x = canvas.width + 60;
@@ -485,6 +517,10 @@ function restart() {
   gameRunning = true;
   inEnding = false;
 
+  hasMet = false;
+  meetTime = 0;
+  brideGroom.x = canvas.width + 100;
+
   player.y = canvas.height - player.height;
   player.dy = 0;
   player.grounded = true;
@@ -494,9 +530,8 @@ function restart() {
   document.getElementById("endingScreen").style.display = "none";
   document.getElementById("score").innerText = score;
   document.getElementById("score").style.display = "block";
-
-  
 }
+
 
 
 window.addEventListener("touchstart", jump);
