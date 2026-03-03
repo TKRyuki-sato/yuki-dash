@@ -70,9 +70,7 @@ button {
     <button onclick="restart()">もう一回</button>
   </div>
 
-  <div id="endingScreen" style="display:none; text-align:center;">
-    <button onclick="restart()">もう一回</button>
-  </div>
+ <div id="endingScreen" style="display:none;"></div>
 
   <canvas id="game"></canvas>
 
@@ -94,6 +92,10 @@ let brideGroom = {
   width: 80,
   height: 60
 };
+let thanksAlpha = 0;
+let confetti = [];
+let confettiStarted = false;
+let sparkles = [];
 let frameCount = 0;
 let runFrame = 0;
 let gravity = 0.8;
@@ -443,7 +445,40 @@ else if (elapsed < 5500) {
     nephew.x = brideGroom.x - nephew.width;
     hasMet = true;
     meetTime = Date.now();
+
+    for (let i = 0; i < 12; i++) {
+  sparkles.push({
+    x: nephew.x + nephew.width,
+    y: nephew.y - 20,
+    radius: Math.random() * 4 + 2,
+    alpha: 1,
+    dx: (Math.random() - 0.5) * 4,
+    dy: (Math.random() - 0.5) * 4
+  });
 }
+for (let i = confetti.length - 1; i >= 0; i--) {
+
+  let c = confetti[i];
+
+  c.y += c.speedY;
+  c.x += c.speedX;
+
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.rotate(c.rotation * Math.PI / 180);
+
+  ctx.fillStyle = c.color;
+  ctx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size);
+
+  ctx.restore();
+
+  if (c.y > canvas.height + 20) {
+    confetti.splice(i, 1);
+  }
+}
+
+}
+
      else {
       nephew.x = nextX;
     }
@@ -464,6 +499,69 @@ else if (elapsed < 5500) {
     player.width,
     player.height
   );
+  // ---- キラ描画（毎フレーム）----
+for (let i = sparkles.length - 1; i >= 0; i--) {
+  let s = sparkles[i];
+
+  s.x += s.dx;
+  s.y += s.dy;
+  s.alpha -= 0.02; // 少しゆっくり消す
+
+  ctx.globalAlpha = s.alpha;
+  ctx.beginPath();
+  ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+  ctx.fillStyle = "#FFD700";
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  if (s.alpha <= 0) {
+    sparkles.splice(i, 1);
+  }
+}
+
+// ---- thanks to you フェード（合流後のみ）----
+if (hasMet) {
+
+  let clearElapsed = Date.now() - meetTime;
+
+  if (clearElapsed > 1500) {
+
+    if (thanksAlpha < 1) {
+      thanksAlpha += 0.02;
+    }
+
+    ctx.globalAlpha = thanksAlpha;
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "28px serif";
+    ctx.textAlign = "center";
+    ctx.fillText("thanks to you", canvas.width / 2, canvas.height / 2 + 40);
+
+    ctx.globalAlpha = 1;
+  }
+}
+
+for (let i = confetti.length - 1; i >= 0; i--) {
+
+  let c = confetti[i];
+
+  c.y += c.speedY;
+  c.x += c.speedX;
+
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.rotate(c.rotation * Math.PI / 180);
+
+  ctx.fillStyle = c.color;
+  ctx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size);
+
+  ctx.restore();
+
+  if (c.y > canvas.height + 20) {
+    confetti.splice(i, 1);
+  }
+}
+
 }
 
 // ---- 合流後1秒で表示 ----
@@ -475,7 +573,29 @@ if (hasMet && Date.now() - meetTime > 1000) {
   ctx.fillText("GAME CLEAR", canvas.width / 2, canvas.height / 2 - 20);
 
   document.getElementById("endingScreen").style.display = "block";
+
+  if (!confettiStarted) {
+
+  confettiStarted = true;
+
+  for (let i = 0; i < 80; i++) {
+
+    let colors = ["#FFD700", "#FFFFFF", "#F8C8DC"];
+
+    confetti.push({
+      x: Math.random() * canvas.width,
+      y: -20,
+      size: Math.random() * 6 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speedY: Math.random() * 2 + 2,
+      speedX: (Math.random() - 0.5) * 2,
+      rotation: Math.random() * 360
+    });
+  }
 }
+}
+
+
  
 }
 
@@ -520,6 +640,9 @@ function restart() {
   hasMet = false;
   meetTime = 0;
   brideGroom.x = canvas.width + 100;
+  confetti = [];
+  confettiStarted = false;
+  thanksAlpha = 0;
 
   player.y = canvas.height - player.height;
   player.dy = 0;
