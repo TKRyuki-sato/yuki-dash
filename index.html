@@ -92,16 +92,26 @@ let brideGroom = {
   width: 80,
   height: 60
 };
+let dusts = [];
+let sunsetAlpha = 0;
+let sunsetStarted = false;
+let shake = 0;
+let clouds = [];
+let justSpawnedDouble = false;
+let sunRotation = 0;
 let thanksAlpha = 0;
 let confetti = [];
 let confettiStarted = false;
 let sparkles = [];
 let frameCount = 0;
 let runFrame = 0;
+let birdFrame = 0;
 let gravity = 0.8;
-let jumpPower = -15;
+let jumpPower = -14;
 let speed = 5;
 let groundOffset = 0;
+let obstacleTimer = 0;
+let nextObstacleTime = 2000;
 let score = 0;
 let gameRunning = false;
 let isTitle = true;
@@ -148,32 +158,78 @@ jumpImg.src = "yuki-dash1ribon.png";
 const landImg = new Image();
 landImg.src = "yuki-jump2ribon.png";
 
+const birdImg = new Image();
+birdImg.src = "bird1up.png";
 
+const bird2 = new Image();
+bird2.src = "bird1down.png";
 
 let obstacles = [];
 
 
-const SPECIAL_SCORE = 500;
+const SPECIAL_SCORE = 800;
 let inEnding = false;
 let endingStartTime = 0;
 let hasMet = false;
 let meetTime = 0;
 
 function spawnObstacle() {
-  let height = 60;
+
+  let type;
+
+  // 20%の確率で鳥（スコア少し進んでから）
+  if (Math.random() < 0.20 && score > 500) {
+    type = "bird";
+  } else {
+    type = "wall";
+  }
+
+  let height = 55;
+  let y = canvas.height - height - 10;
+
+  // 鳥の高さ
+  if (type === "bird") {
+    height = 40;
+    y = canvas.height - 115; // ゆきくんの少し上
+  }
+
   obstacles.push({
     x: canvas.width,
-    y: canvas.height - height,
-    width: 40,
-    height: height
+    y: y,
+    width: 35,
+    height: height,
+    type: type
   });
 }
 
-setInterval(spawnObstacle, 2200);
+function createClouds() {
+
+  clouds = [];
+
+  for (let i = 0; i < 5; i++) {
+
+    clouds.push({
+      x: Math.random() * canvas.width,
+      y: 40 + Math.random() * 80,
+      size: 40 + Math.random() * 40
+    });
+
+  }
+}
+
 
 createGrass();
+createClouds();
+
 
 function update() {
+
+  ctx.save();
+
+  if (shake > 0) {
+    ctx.translate(Math.random() * 6 - 3, Math.random() * 6 - 3);
+    shake--;
+  }
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -200,6 +256,62 @@ function update() {
 ctx.fillStyle = "#87CEEB";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+
+// 夕焼けフェード
+if (sunsetStarted && sunsetAlpha < 1) {
+  sunsetAlpha += 0.03;
+}
+
+ctx.globalAlpha = sunsetAlpha;
+ctx.fillStyle = "#FFB74D";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.globalAlpha = 1;
+
+
+// 太陽
+sunRotation += 0.01;
+
+ctx.save();
+ctx.translate(700, 80); // 太陽の位置
+
+ctx.rotate(sunRotation);
+
+ctx.fillStyle = "#FFD54F";
+ctx.beginPath();
+ctx.arc(0, 0, 30, 0, Math.PI * 2);
+ctx.fill();
+
+// 光
+for (let i = 0; i < 8; i++) {
+
+  ctx.rotate(Math.PI / 4);
+
+  ctx.fillRect(35, -3, 15, 6);
+
+}
+
+ctx.restore();
+
+
+   //雲
+ctx.fillStyle = "white";
+
+for (let cloud of clouds) {
+
+  cloud.x -= speed * 0.3; // 地面より遅い
+
+  if (cloud.x < -100) {
+    cloud.x = canvas.width + Math.random() * 200;
+    cloud.y = 40 + Math.random() * 80;
+  }
+
+  ctx.beginPath();
+  ctx.arc(cloud.x, cloud.y, cloud.size * 0.5, 0, Math.PI * 2);
+  ctx.arc(cloud.x + cloud.size * 0.5, cloud.y + 10, cloud.size * 0.4, 0, Math.PI * 2);
+  ctx.arc(cloud.x - cloud.size * 0.5, cloud.y + 10, cloud.size * 0.4, 0, Math.PI * 2);
+  ctx.fill();
+}
+
   // 床（草原）
 ctx.fillStyle = "#4CAF50";
 ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
@@ -223,6 +335,28 @@ for (let dot of grassDots) {
   }
 
   ctx.fillRect(dot.x, dot.y, dot.size, dot.size);
+}
+
+for (let i = dusts.length - 1; i >= 0; i--) {
+
+  let d = dusts[i];
+
+  d.x += d.dx;
+  d.size += 0.3;
+  d.alpha -= 0.03;
+
+  ctx.globalAlpha = d.alpha;
+  ctx.fillStyle = "#cccccc";
+
+  ctx.beginPath();
+  ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.globalAlpha = 1;
+
+  if (d.alpha <= 0) {
+    dusts.splice(i, 1);
+  }
 }
 
 
@@ -252,7 +386,17 @@ for (let dot of grassDots) {
       let obs = obstacles[i];
       obs.x -= speed;
 
-      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+     if (obs.type === "bird") {
+
+  if (birdFrame === 0) {
+    ctx.drawImage(birdImg, obs.x, obs.y, obs.width, obs.height);
+  } else {
+    ctx.drawImage(bird2, obs.x, obs.y, obs.width, obs.height);
+  }
+
+} else {
+  ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+}
 
       if (
         player.x < obs.x + obs.width &&
@@ -260,6 +404,8 @@ for (let dot of grassDots) {
         player.y < obs.y + obs.height &&
         player.y + player.height > obs.y
       ) {
+        shake = 10;
+
         if (score >= SPECIAL_SCORE) {
           startSpecialEnding();
         } else {
@@ -275,22 +421,81 @@ for (let dot of grassDots) {
     score++;
     document.getElementById("score").innerText = score;
 
+    if (score >= 800 && !sunsetStarted) {
+  sunsetStarted = true;
+}
+
+    
+    if (score < 1500) {
+  speed = 6.5 + score / 3000;
+}
+else if (score < 2500) {
+  speed = 7.5 + score / 2000;
+}
+else {
+  speed = 9 + score / 1000;
+}
+
     groundOffset += speed;
 
 
     
 
-    if (score % 500 === 0) {
-      speed += 0.5;
-    }
 
     frameCount++;
 
 if (frameCount % 10 === 0) {
   runFrame = (runFrame + 1) % 2;
 }
+if (frameCount % 15 === 0) {
+  birdFrame = (birdFrame + 1) % 2;
+}
 
+
+obstacleTimer += 16;
+
+if (obstacleTimer > nextObstacleTime) {
+
+  spawnObstacle();
+
+  // たまに連続障害物
+ if (Math.random() < 0.35 && score > 500) {
+
+  let delay = 600 + Math.random() * 200;
+
+  setTimeout(() => {
+    spawnObstacle();
+  }, delay);
+
+  justSpawnedDouble = true;
+}
+
+  obstacleTimer = 0;
+
+  if (justSpawnedDouble) {
+
+  nextObstacleTime = 1400 + Math.random() * 800;
+  justSpawnedDouble = false;
+
+}
+else if (score < 1500) {
+
+  nextObstacleTime = 1400 + Math.random() * 900;
+
+}
+else if (score < 3000) {
+
+  nextObstacleTime = 900 + Math.random() * 700;
+
+}
+else {
+
+  nextObstacleTime = 600 + Math.random() * 500;
+
+}
+}
   }
+  ctx.restore();
 
   requestAnimationFrame(update);
 }
@@ -304,6 +509,18 @@ function jump() {
   }
 
   if (player.grounded && gameRunning) {
+
+    // 土煙
+    for (let i = 0; i < 3; i++) {
+      dusts.push({
+        x: player.x + 20,
+        y: player.y + player.height - 5,
+        size: 8,
+        alpha: 1,
+        dx: (Math.random() - 0.5) * 2
+      });
+    }
+
     player.dy = jumpPower;
     player.grounded = false;
   }
@@ -348,8 +565,8 @@ ctx.fillRect(
   else if (elapsed < 3500) {
 
   // 屋外背景（通常と同じ）
-  ctx.fillStyle = "#87CEEB";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+ ctx.fillStyle = "#FFB74D";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = "#4CAF50";
   ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
@@ -374,7 +591,7 @@ if (nephew.x > targetX) {
 else if (elapsed < 4200) {
 
   // 屋外背景
-  ctx.fillStyle = "#87CEEB";
+  ctx.fillStyle = "#FFB74D";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = "#4CAF50";
@@ -392,7 +609,7 @@ else if (elapsed < 4200) {
 else if (elapsed < 5500) {
 
   // 屋外背景
-  ctx.fillStyle = "#87CEEB";
+  ctx.fillStyle = "#FFB74D";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = "#4CAF50";
