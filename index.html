@@ -83,8 +83,17 @@ const ctx = canvas.getContext("2d");
 
 ctx.imageSmoothingEnabled = false;  // ←ここ追加
 
-canvas.width = 800;
-canvas.height = 400;
+function resizeGame() {
+
+  canvas.width = window.innerWidth;
+
+  canvas.height = canvas.width / 2;
+
+}
+
+resizeGame();
+
+window.addEventListener("resize", resizeGame);
 
 
 
