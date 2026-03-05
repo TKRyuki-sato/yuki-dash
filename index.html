@@ -83,17 +83,8 @@ const ctx = canvas.getContext("2d");
 
 ctx.imageSmoothingEnabled = false;  // ←ここ追加
 
-function resizeGame() {
-
-  canvas.width = window.innerWidth;
-
-  canvas.height = canvas.width / 2;
-
-}
-
-resizeGame();
-
-window.addEventListener("resize", resizeGame);
+canvas.width = 800;
+canvas.height = 400;
 
 
 
@@ -496,13 +487,13 @@ for (let i = dusts.length - 1; i >= 0; i--) {
 
     
     if (score < 1500) {
-  speed = 6.5 + score / 3000;
+  speed = 7.5 + score / 3000;
 }
 else if (score < 2500) {
-  speed = 7.5 + score / 2000;
+  speed = 8.5 + score / 2000;
 }
 else {
-  speed = 9 + score / 1000;
+  speed = 10 + score / 1000;
 }
 
     groundOffset += speed;
@@ -1036,4 +1027,5 @@ update();
 
 </body>
 </html>
+
 
